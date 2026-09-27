@@ -1,0 +1,19 @@
+# Fixed primary experiment; verified fitted run state lives under runs/.
+model: patchcore
+seed: 42
+manifest: data/manifests/carpet_split.csv
+image_size: [256, 256]
+backbone: wide_resnet50_2
+pretrained: true
+pretrained_weights: wide_resnet50_2.racm_in1k
+layers: [layer2, layer3]
+coreset_sampling_ratio: 0.1
+num_neighbors: 9
+batch_size: 4
+precision: float32
+num_workers: 0
+device: auto
+calibration:
+  quantile: 0.95
+  method: linear
+  comparison: greater
