@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "carpet-texture-anomaly-detection"
+version = "0.1.0"
+description = "Normal-only carpet anomaly detection research"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "anomalib==2.3.2", "torch==2.8.0", "torchvision==0.23.0",
+    "numpy", "pandas", "Pillow", "opencv-python", "scikit-image",
+    "scikit-learn", "scipy", "joblib", "PyYAML", "matplotlib",
+    "seaborn", "fastapi", "uvicorn", "pytest", "httpx",
+]
+
+[project.optional-dependencies]
+browser-test = ["playwright"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

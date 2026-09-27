@@ -1,0 +1,28 @@
+# Fixed primary experiment configuration; fitted run state lives under runs/.
+model: lbp_glcm_ocsvm
+seed: 42
+manifest: data/manifests/carpet_split.csv
+image_size: [256, 256]
+lbp:
+  points: 8
+  radius: 1
+  method: uniform
+  grid: [4, 4]
+  bins: 10
+  normalization: l1
+glcm:
+  levels: 32
+  distances: [1, 3]
+  angles_degrees: [0, 45, 90, 135]
+  symmetric: true
+  normed: true
+  properties: [contrast, homogeneity, energy, correlation]
+scaler: standard
+svm:
+  kernel: rbf
+  nu: 0.05
+  gamma: scale
+calibration:
+  quantile: 0.95
+  method: linear
+  comparison: greater
