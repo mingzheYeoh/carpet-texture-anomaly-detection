@@ -356,3 +356,12 @@ of completed Tasks 1-8 is authorized by the owner.
   outstanding reviewer findings; no datasets, weights, caches or uploads staged.
 - Keep text checkout line endings at LF so Windows Git conversion cannot alter
   frozen manifest/config hashes. Verified staged bytes against local originals.
+
+## UI typography refinement (2026-09-27)
+
+Owner requested less generic typography. Replaced light promotional headings
+with direct task labels, used Arial with consistent weights, raised small text
+to 12-14px, and adjusted panel widths for readability. Production build and the
+existing real-model browser check pass; layouts fit widths from 320 to 1440px.
+Owner authorized push and merge of ui/typography on 2026-09-28. Production build
+was rechecked successfully before integration; Tasks 1-8 were merged through PR #1.
