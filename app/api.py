@@ -1,7 +1,8 @@
-"""Local-only web adapter. Start from the repository root with one worker."""
+"""Local and Space web adapter. Start from the repository root with one worker."""
 
 import base64
 import csv
+import os
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
@@ -29,10 +30,19 @@ MODELS = {
     "lbp_glcm": {"name": "LBP + GLCM", "run_id": "lbp_glcm_seed42", "artifact": "model.joblib"},
 }
 SAMPLES = {"a": "test/good/000.png", "b": "test/cut/000.png"}
-# ponytail: one local inference at a time; add a worker queue only for multi-user use.
+# ponytail: one inference at a time; add a queue if concurrent usage matters.
 INFERENCE_LOCK = Lock()
 app = FastAPI(title="Carpet inspection", docs_url=None, redoc_url=None)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost", "testserver"])
+
+
+def allowed_hosts():
+    hosts = ["127.0.0.1", "localhost", "testserver"]
+    if os.environ.get("SPACE_HOST"):
+        hosts.append(os.environ["SPACE_HOST"])
+    return hosts
+
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts())
 
 
 @lru_cache(maxsize=3)
@@ -116,7 +126,9 @@ async def predict(request: Request, model: str = "patchcore"):
 def status():
     import torch
     gpu = torch.cuda.is_available()
-    return dict(device=torch.cuda.get_device_name(0) if gpu else "CPU: CUDA unavailable; inference will be slower",
+    return dict(cloud=bool(os.environ.get("SPACE_ID")),
+                samples=all((ROOT / "data/raw/carpet" / path).is_file() for path in SAMPLES.values()),
+                device=torch.cuda.get_device_name(0) if gpu else "CPU: CUDA unavailable; inference will be slower",
                 gpu=gpu, models=[dict(id=key, name=value["name"],
                     available=all((ROOT / "runs" / value["run_id"] / name).is_file()
                         for name in (value["artifact"], "metadata.json", "config.yaml", "manifest.csv", "calibration.json", "calibration_scores.csv")))

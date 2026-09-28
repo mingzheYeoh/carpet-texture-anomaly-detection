@@ -1,3 +1,9 @@
+---
+title: Carpet Lab
+sdk: docker
+app_port: 7860
+---
+
 # carpet-texture-anomaly-detection
 Comparing handcrafted texture features (LBP/GLCM + One-Class SVM) with PatchCore for carpet defect detection on MVTec AD, with anomaly heatmaps and a React + Tailwind / FastAPI local demo.
 
@@ -270,3 +276,40 @@ Playwright is pinned in the full lock; minimal installations can use
 `python -m pip install -e ".[browser-test]"`. It checks real model scores against
 saved clean predictions, UI controls, upload errors and mobile layout. Screenshots
 are local under ignored runs/task8/ because they can include dataset imagery.
+
+## Hugging Face Docker Space
+
+The Docker image serves the built React UI and FastAPI on port 7860 with one
+worker and CPU inference. It uses the same frozen models and thresholds as the
+local demo. Uploads are sent to the Space for processing, remain in memory, and
+are not saved. Dataset images are excluded, so local sample buttons are hidden.
+
+Prepare a small upload folder from the repository root after fitting/calibrating
+all three runs. The exporter validates the artifacts and refuses to overwrite an
+existing folder; choose a fresh `--output` path under `artifacts/` for later builds.
+
+```powershell
+.\.venv\Scripts\python.exe app/prepare_space.py --output artifacts/space-bundle
+hf auth login
+hf repos create USER/carpet-texture-anomaly-detection --type space --space-sdk docker --flavor cpu-basic --private
+hf upload USER/carpet-texture-anomaly-detection artifacts/space-bundle . --repo-type space
+```
+
+Replace `USER` with your Hugging Face username. Check your account's current
+Docker Spaces eligibility before creating the Space. Upload only the prepared
+folder, which includes the fitted models; never upload the entire working tree.
+See `DATA_LICENSE.md` for dataset attribution and non-commercial use restrictions.
+
+To verify the container locally, with Docker running:
+
+```powershell
+docker build -t carpet-space:cpu .
+docker run --rm --name carpet-space-check --cpus 2 --memory 16g -p 127.0.0.1:7860:7860 -e SPACE_ID=local/carpet-lab carpet-space:cpu
+# In another terminal:
+.\.venv\Scripts\python.exe tests/check_space.py
+```
+
+The check uploads one locally available test image to all three models and
+compares scores, thresholds and decisions with saved predictions. It also checks
+upload validation, report data and PatchCore's heatmap. Cloud inference is CPU
+based; the original experiment's GPU timing is not a cloud latency estimate.

@@ -14,9 +14,9 @@ const percent = value => `${(Number(value) * 100).toFixed(1)}%`
 async function request(url, options) {
   let response
   try { response = await fetch(url, options) }
-  catch { throw new Error('Cannot reach the local service. Start the API, then retry.') }
+  catch { throw new Error('Cannot reach the inference service. Please retry shortly.') }
   const body = await response.json().catch(() => null)
-  if (!response.ok || !body) throw new Error(typeof body?.detail === 'string' ? body.detail : 'The local service is unavailable. Check the server and retry.')
+  if (!response.ok || !body) throw new Error(typeof body?.detail === 'string' ? body.detail : 'The inference service is unavailable. Please retry shortly.')
   return body
 }
 
@@ -124,21 +124,21 @@ function App() {
     <header className="topbar">
       <a className="brand" href="/" aria-label="Carpet Lab home"><span className="brand-mark" aria-hidden="true"><i/><i/><i/></span><span>Carpet<span className="font-normal text-stone-300">Lab</span></span></a>
       <nav aria-label="Main navigation"><button className={tab === 'inspect' ? 'selected' : ''} aria-current={tab === 'inspect' ? 'page' : undefined} onClick={() => setTab('inspect')}><Icon name="scan"/>Inspection</button><button className={tab === 'results' ? 'selected' : ''} aria-current={tab === 'results' ? 'page' : undefined} onClick={() => setTab('results')}><Icon name="chart"/>Experiment results</button></nav>
-      <div className="local-status"><span className={`status-dot ${status ? 'online' : ''}`}/>{status ? 'Local engine connected' : statusError ? 'Engine offline' : 'Connecting…'}</div>
+      <div className="local-status"><span className={`status-dot ${status ? 'online' : ''}`}/>{status ? status.cloud ? 'Cloud engine connected' : 'Local engine connected' : statusError ? 'Engine offline' : 'Connecting…'}</div>
     </header>
     <main>
-      <div className="page-heading"><div><h1>{tab === 'inspect' ? 'Carpet inspection' : 'Experiment results'}</h1><p>{tab === 'inspect' ? 'Upload a carpet image and inspect it with a trained model.' : 'Detection performance on the MVTec AD carpet test set.'}</p></div><span className="version-label">Local workspace</span></div>
+      <div className="page-heading"><div><h1>{tab === 'inspect' ? 'Carpet inspection' : 'Experiment results'}</h1><p>{tab === 'inspect' ? 'Upload a carpet image and inspect it with a trained model.' : 'Detection performance on the MVTec AD carpet test set.'}</p></div><span className="version-label">{status?.cloud ? 'Hugging Face Space' : 'Local workspace'}</span></div>
       {statusError && <div className="error-box mb-5" role="alert">{statusError}<button className="quiet-button ml-4" onClick={refresh}>Reconnect</button></div>}
       {tab === 'results' ? <Results data={reports} error={reportError} retry={fetchReports}/> : <div className="workbench">
         <aside className="input-panel">
           <div className="panel-title"><span>Image source</span><Icon name="image"/></div>
           <input ref={input} id="image-upload" type="file" accept="image/png,image/jpeg" className="sr-only" aria-label="Upload carpet image" disabled={busy} onChange={e => { choose(e.target.files?.[0]); e.target.value = '' }}/>
           <button className={`dropzone ${dragging ? 'dragging' : ''}`} disabled={busy} onClick={() => input.current.click()} onDragOver={e => { e.preventDefault(); setDragging(true) }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files?.[0]) }}><Icon name="upload" width="28" height="28"/><strong>{file ? 'Replace image' : 'Drop your image here'}</strong><span>or click to browse</span><small>PNG / JPEG · Up to 10 MB, 20 MP</small></button>
-          <div className="samples"><span>Local samples</span><div><button disabled={busy} onClick={() => sample('a')}>Sample A</button><button disabled={busy} onClick={() => sample('b')}>Sample B</button></div></div>
+          {status?.samples && <div className="samples"><span>Local samples</span><div><button disabled={busy} onClick={() => sample('a')}>Sample A</button><button disabled={busy} onClick={() => sample('b')}>Sample B</button></div></div>}
           <fieldset disabled={busy} className="model-picker"><legend>Inspection model</legend>{models.map(item => <label key={item.id} className={`model-option ${model === item.id ? 'chosen' : ''}`}><input type="radio" name="model" value={item.id} checked={model === item.id} onChange={() => { setModel(item.id); setResult(null); setError('') }}/><div><strong>{item.name}</strong><span>{item.detail}</span><small>{item.tag}</small></div><span className="radio-indicator" aria-hidden="true"/></label>)}</fieldset>
           <button className="inspect-button" onClick={inspect} disabled={!file || busy || !status || !selected?.available}>{busy ? <><span className="spinner"/>Inspecting…</> : <>Run inspection<Icon name="arrow"/></>}</button>
           {selected && !selected.available && <p role="alert" className="text-amber-200 text-sm mt-3">Model artifacts are missing. Restore this model's local run to inspect.</p>}
-          <p className="privacy-note">Images stay on this machine.<br/>Uploads are not saved.</p>
+          <p className="privacy-note">{status?.cloud ? 'Images are sent to this Space.' : 'Images stay on this machine.'}<br/>Uploads are not saved.</p>
         </aside>
         <section className="viewer-panel" aria-label="Image inspection workspace">
           <div className="viewer-heading"><span className="truncate">{file ? file.name : 'Inspection workspace'}</span><span>{result ? `${result.width} × ${result.height} px` : 'Full image'}</span></div>
@@ -158,7 +158,7 @@ function App() {
         </aside>
       </div>}
     </main>
-    <footer><span><span className="status-dot online"/>On-device inference</span><span>{status?.device || 'Local research workspace'}</span><span>MVTec AD · Carpet category</span></footer>
+    <footer><span><span className="status-dot online"/>{status?.cloud ? 'Cloud inference' : 'On-device inference'}</span><span>{status?.device || 'Local research workspace'}</span><span>MVTec AD · Carpet category</span></footer>
   </div>
 }
 
