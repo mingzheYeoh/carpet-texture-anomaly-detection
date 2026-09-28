@@ -66,3 +66,14 @@ def test_cpu_status_and_missing_report_are_explicit():
     with tempfile.TemporaryDirectory() as directory, patch("app.api.ROOT", Path(directory)):
         assert client.get("/api/results").status_code == 503
         assert client.get("/api/samples/a").status_code == 404
+
+
+def test_space_hostname_is_allowed_only_when_configured():
+    from app.api import app
+    client = TestClient(app)
+    assert client.get("/api/results", headers={"host": "untrusted.example"}).status_code == 400
+    # The configured Space host is populated by Hugging Face's SPACE_HOST variable.
+    from app.api import allowed_hosts
+    with patch.dict("os.environ", {"SPACE_HOST": "owner-carpet.hf.space"}):
+        assert "owner-carpet.hf.space" in allowed_hosts()
+        assert "*" not in allowed_hosts()
