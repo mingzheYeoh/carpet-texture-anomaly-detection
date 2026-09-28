@@ -49,7 +49,7 @@ with sync_playwright() as p:
             expect(page.get_by_text("Localization unavailable for this model.")).to_be_visible()
         print(f"PASS: {model} browser prediction matches frozen clean result")
     page.get_by_role("button", name="Experiment results").click()
-    expect(page.get_by_role("heading", name="Evidence, not estimates.")).to_be_visible()
+    expect(page.get_by_role("heading", name="Model comparison")).to_be_visible()
     page.get_by_role("button", name="Brightness ×1.2").click()
     expect(page.locator(".metric-panel")).to_have_count(3)
     expect(page.locator(".metric-panel").nth(1)).to_contain_text("100.0%")
